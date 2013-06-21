@@ -84,6 +84,9 @@ extern ao_functions ao_aixs;
 #ifdef HAVE_WMM
 extern ao_functions ao_wmm;
 #endif
+#ifdef HAVE_MACOSX
+extern ao_functions ao_macosx;
+#endif
 static ao_functions *static_drivers[] = {
 	&ao_null, /* Must have at least one static driver! */
 	&ao_wav,
@@ -94,6 +97,9 @@ static ao_functions *static_drivers[] = {
 #endif
 #ifdef HAVE_WMM
 	&ao_wmm,
+#endif
+#ifdef HAVE_MACOSX
+	&ao_macosx,
 #endif
 
 	NULL /* End of list */
