@@ -41,6 +41,7 @@
 #include <pthread.h>
 
 #include "ao/ao.h"
+#include "ao/plugin.h"
 
 #define DEFAULT_BUFFER_TIME (250);
 
@@ -172,7 +173,7 @@ static OSStatus audioCallback (void *inRefCon,
   return err;
 }
 
-int ao_macosx_test()
+int ao_plugin_test()
 {
   /* This plugin will only build on a 10.4 or later Mac (Darwin 8+);
      if it built, default AUHAL is available. */
@@ -180,13 +181,13 @@ int ao_macosx_test()
 
 }
 
-ao_info *ao_macosx_driver_info(void)
+ao_info *ao_plugin_driver_info(void)
 {
   return &ao_macosx_info;
 }
 
 
-int ao_macosx_device_init(ao_device *device)
+int ao_plugin_device_init(ao_device *device)
 {
   ao_macosx_internal *internal;
 
@@ -377,7 +378,7 @@ static AudioDeviceID findAudioOutputDevice(const char *name)
   }
 }
 
-int ao_macosx_set_option(ao_device *device, const char *key, const char *value)
+int ao_plugin_set_option(ao_device *device, const char *key, const char *value)
   {
   ao_macosx_internal *internal = (ao_macosx_internal *) device->internal;
   int buffer;
@@ -403,7 +404,7 @@ int ao_macosx_set_option(ao_device *device, const char *key, const char *value)
   return 1;
 }
 
-int ao_macosx_open(ao_device *device, ao_sample_format *format)
+int ao_plugin_open(ao_device *device, ao_sample_format *format)
 {
   ao_macosx_internal *internal = (ao_macosx_internal *) device->internal;
   OSStatus result = noErr;
@@ -605,7 +606,7 @@ int ao_macosx_open(ao_device *device, ao_sample_format *format)
 }
 
 
-int ao_macosx_play(ao_device *device, const char *output_samples,
+int ao_plugin_play(ao_device *device, const char *output_samples,
 		uint_32 num_bytes)
 {
   ao_macosx_internal *internal = (ao_macosx_internal *) device->internal;
@@ -664,7 +665,7 @@ int ao_macosx_play(ao_device *device, const char *output_samples,
 }
 
 
-int ao_macosx_close(ao_device *device)
+int ao_plugin_close(ao_device *device)
 {
   ao_macosx_internal *internal = (ao_macosx_internal *) device->internal;
   OSStatus status;
@@ -736,7 +737,7 @@ int ao_macosx_close(ao_device *device)
 }
 
 
-void ao_macosx_device_clear(ao_device *device)
+void ao_plugin_device_clear(ao_device *device)
 {
   ao_macosx_internal *internal = (ao_macosx_internal *) device->internal;
 
@@ -746,13 +747,3 @@ void ao_macosx_device_clear(ao_device *device)
   device->internal=NULL;
 }
 
-ao_functions ao_macosx = {
-  ao_macosx_test,
-  ao_macosx_driver_info,
-  ao_macosx_device_init,
-  ao_macosx_set_option,
-  ao_macosx_open,
-  ao_macosx_play,
-  ao_macosx_close,
-  ao_macosx_device_clear
-};
