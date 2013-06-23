@@ -51,12 +51,20 @@ static int dlclose(void *handle) { return 0; }
 #endif
 #include <dirent.h>
 
+#if defined(__MACH__) && defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
+
 #include "ao/ao.h"
 #include "ao_private.h"
 
 /* These should have been set by the Makefile */
 #ifndef AO_PLUGIN_PATH
 #define AO_PLUGIN_PATH "/usr/local/lib/ao"
+#endif
+#ifdef CUSTOM_AO_PLUGIN_PATH
+#undef AO_PLUGIN_PATH
+#define AO_PLUGIN_PATH CUSTOM_AO_PLUGIN_PATH
 #endif
 #ifndef SHARED_LIB_EXT
 #define SHARED_LIB_EXT ".so"
@@ -293,15 +301,34 @@ static void _append_dynamic_drivers(driver_list *end)
 	driver_list *plugin;
 	driver_list *driver = end;
         ao_device *device = ao_global_dummy;
+    const char *pluginpath = AO_PLUGIN_PATH;
 
-	/* now insert any plugins we find */
-	plugindir = opendir(AO_PLUGIN_PATH);
-        adebug("Loading driver plugins from %s...\n",AO_PLUGIN_PATH);
+#if defined(__MACH__) && defined(__APPLE__)
+    char *newpluginpath = NULL;
+
+    if (strncmp(AO_PLUGIN_PATH, "@executable_path/", 17) == 0) {
+        uint32_t bufsize = 0;
+        _NSGetExecutablePath(NULL, &bufsize);
+        bufsize += strlen(AO_PLUGIN_PATH);
+        newpluginpath = (char *)malloc(bufsize);
+        _NSGetExecutablePath(newpluginpath, &bufsize);
+        char *lastslash = strrchr(newpluginpath,'/');
+        if (lastslash != NULL)
+            strcpy(&lastslash[1], &pluginpath[17]);
+        else
+            strcpy(newpluginpath, &pluginpath[17]);
+        pluginpath = newpluginpath;
+    }
+#endif
+
+    /* now insert any plugins we find */
+    plugindir = opendir(pluginpath);
+    adebug("Loading driver plugins from %s...\n",pluginpath);
 	if (plugindir != NULL) {
           while ((plugin_dirent = readdir(plugindir)) != NULL) {
-            char fullpath[strlen(AO_PLUGIN_PATH) + 1 + strlen(plugin_dirent->d_name) + 1];
+            char fullpath[strlen(pluginpath) + 1 + strlen(plugin_dirent->d_name) + 1];
             snprintf(fullpath, sizeof(fullpath), "%s/%s",
-                     AO_PLUGIN_PATH, plugin_dirent->d_name);
+                     pluginpath, plugin_dirent->d_name);
             if (!stat(fullpath, &statbuf) &&
                 S_ISREG(statbuf.st_mode) &&
                 (ext = strrchr(plugin_dirent->d_name, '.')) != NULL) {
@@ -318,6 +345,11 @@ static void _append_dynamic_drivers(driver_list *end)
 
           closedir(plugindir);
 	}
+
+#if defined(__MACH__) && defined(__APPLE__)
+    free(newpluginpath);
+#endif
+
 #endif
 }
 
